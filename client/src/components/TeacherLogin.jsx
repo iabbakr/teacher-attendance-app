@@ -11,7 +11,7 @@ function TeacherLogin() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5001/api/auth/login', { email, password });
+      const res = axios.post(`${apiUrl}/api/auth/login`, { email, password });
       localStorage.setItem('token', res.data.token);
       if (res.data.teacher.role === 'admin') {
         navigate('/admin-dashboard');
@@ -26,7 +26,7 @@ function TeacherLogin() {
 
   const handleRegister = async () => {
     try {
-      const res = await axios.post('http://localhost:5001/api/auth/register', {
+      const res = await axios.post(`${apiUrl}/api/auth/register`, {
         name: 'Teacher Name',
         email,
         password,
