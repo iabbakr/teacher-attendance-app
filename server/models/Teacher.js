@@ -1,12 +1,69 @@
 const mongoose = require('mongoose');
 
-const teacherSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  fingerprint: { type: String, required: true }, // Store fingerprint template (base64 or hash)
-  role: { type: String, enum: ['teacher', 'admin'], default: 'teacher' },
-  createdAt: { type: Date, default: Date.now },
+const TeacherSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  password: {
+    type: String,
+    required: true
+  },
+  role: {
+    type: String,
+    enum: ['teacher', 'admin'],
+    default: 'teacher'
+  },
+  age: {
+    type: Number,
+    required: true
+  },
+  schoolName: {
+    type: String,
+    required: true
+  },
+  className: {
+    type: String,
+    required: true
+  },
+  position: {
+    type: String,
+    required: true
+  },
+  gender: {
+    type: String,
+    enum: ['male', 'female', 'other'],
+    required: true
+  },
+  religion: {
+    type: String,
+    required: true
+  },
+  subjects: [{
+    type: String,
+    required: true
+  }],
+  attendance: [{
+    date: {
+      type: Date,
+      required: true
+    },
+    checkIn: {
+      type: Date
+    },
+    checkOut: {
+      type: Date
+    }
+  }],
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
 });
 
-module.exports = mongoose.model('Teacher', teacherSchema);
+module.exports = mongoose.model('Teacher', TeacherSchema);

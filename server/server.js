@@ -11,12 +11,11 @@ const app = express();
 
 // Enable CORS for the frontend origin
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: ['http://localhost:3000', 'https://teacher-attendance-app-client.vercel.app'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Parse JSON requests
 app.use(express.json());
 
 // Connect to MongoDB
@@ -38,7 +37,7 @@ app.use((err, req, res, next) => {
 
 // Handle server startup errors
 const server = app.listen(process.env.PORT || 5001, () => {
-  console.log(`Server running on port ${process.env.PORT || 5000}`);
+  console.log(`Server running on port ${process.env.PORT || 5001}`);
 });
 
 server.on('error', (error) => {
@@ -46,13 +45,11 @@ server.on('error', (error) => {
   process.exit(1);
 });
 
-// Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
   process.exit(1);
 });
 
-// Handle unhandled promise rejections
 process.on('unhandledRejection', (error) => {
   console.error('Unhandled Rejection:', error);
   process.exit(1);
