@@ -48,6 +48,10 @@ const TeacherSchema = new mongoose.Schema({
     type: String,
     required: true
   }],
+  profilePicture: {
+    type: String,
+    default: 'https://res.cloudinary.com/<your-cloudinary-cloud-name>/image/upload/v1/teacher_profile/default.jpg'
+  },
   attendance: [{
     date: {
       type: Date,
@@ -60,6 +64,12 @@ const TeacherSchema = new mongoose.Schema({
       type: Date
     }
   }],
+  resetPasswordToken: {
+    type: String
+  },
+  resetPasswordExpires: {
+    type: Date
+  },
   createdAt: {
     type: Date,
     default: Date.now

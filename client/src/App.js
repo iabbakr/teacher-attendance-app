@@ -4,26 +4,39 @@ import TeacherLogin from './components/TeacherLogin';
 import TeacherDashboard from './components/TeacherDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import Profile from './components/Profile';
+import ResetPassword from './components/ResetPassword';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<TeacherLogin />} />
+        <Route path="/" element={<TeacherLogin />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route
           path="/teacher-dashboard"
-          element={<ProtectedRoute component={TeacherDashboard} />}
+          element={
+            <ProtectedRoute>
+              <TeacherDashboard />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/admin-dashboard"
-          element={<ProtectedRoute component={AdminDashboard} />}
+          element={
+            <ProtectedRoute adminOnly={true}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/profile"
-          element={<ProtectedRoute component={Profile} />}
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
         />
-        <Route path="/" element={<TeacherLogin />} />
       </Routes>
     </Router>
   );
