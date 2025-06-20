@@ -25,7 +25,7 @@ function TeacherLogin() {
     try {
       const apiUrl = process.env.REACT_APP_API_URL;
       console.log('Attempting login to:', `${apiUrl}/api/auth/login`);
-      const res = await axios.post(`${apiUrl}/api/auth/login`, { email, password });
+      const res = await axios.post(`${apiUrl}/api/auth/login`, { email, password },{ withCredentials: true });
       localStorage.setItem('token', res.data.token);
       if (res.data.teacher.role === 'admin') {
         navigate('/admin-dashboard');
@@ -88,7 +88,7 @@ function TeacherLogin() {
       };
       console.log('Registration payload:', JSON.stringify(payload, null, 2));
       console.log('Sending registration payload to:', `${apiUrl}/api/auth/register`);
-      const res = await axios.post(`${apiUrl}/api/auth/register`, payload);
+      const res = await axios.post(`${apiUrl}/api/auth/register`, payload, { withCredentials: true });
       localStorage.setItem('token', res.data.token);
       navigate(isAdmin ? '/admin-dashboard' : '/teacher-dashboard');
     } catch (error) {
@@ -100,9 +100,9 @@ function TeacherLogin() {
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+      const apiUrl = process.env.REACT_APP_API_URL;
       console.log('Sending password reset request for:', resetEmail);
-      const res = await axios.post(`${apiUrl}/api/auth/forgot-password`, { email: resetEmail });
+      const res = await axios.post(`${apiUrl}/api/auth/forgot-password`, { email: resetEmail }, { withCredentials: true });
       console.log('Password reset response:', res.data);
       alert('Password reset link sent to your email');
       setShowReset(false);

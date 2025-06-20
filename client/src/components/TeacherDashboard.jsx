@@ -11,7 +11,7 @@ function TeacherDashboard() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+        const apiUrl = process.env.REACT_APP_API_URL;
         const token = localStorage.getItem('token');
         const res = await axios.get(`${apiUrl}/api/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` }
