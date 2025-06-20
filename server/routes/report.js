@@ -3,147 +3,103 @@ const router = express.Router();
 const Teacher = require('../models/Teacher');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// Get Monthly Attendance Report (Teacher)
-router.get('/monthly', authMiddleware, async (req, res) => {
-  try {
-    const { year, month } = req.query;
-    if (!year || !month) {
-      return res.status(400).json({ msg: 'Year and month are required' });
-    }
-
-    const teacher = await Teacher.findById(req.teacher.id).select('attendance name');
-    if (!teacher) {
-      return res.status(404).json({ msg: 'Teacher not found' });
-    }
-
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0);
-
-    const records = teacher.attendance.filter(record => {
-      const recordDate = new Date(record.date);
-      return recordDate >= startDate && recordDate <= endDate;
-    });
-
-    const report = records.map(record => ({
-      date: record.date,
-      checkIn: record.checkIn ? record.checkIn : null,
-      checkOut: record.checkOut ? record.checkOut : null,
-      status: record.checkIn && record.checkOut ? 'Present' : record.checkIn ? 'Incomplete' : 'Absent'
-    }));
-
-    res.json({ teacherName: teacher.name, year, month, report });
-  } catch (error) {
-    console.error('Monthly report error:', error.message);
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
-
-// Get Individual Teacher Report (Admin)
+// Get Teacher Attendance Report
 router.get('/teacher/:id', authMiddleware, async (req, res) => {
   try {
-    const admin = await Teacher.findById(req.teacher.id);
-    if (admin.role !== 'admin') {
-      return res.status(403).json({ msg: 'Access denied' });
-    }
-
     const { year, month } = req.query;
     if (!year || !month) {
       return res.status(400).json({ msg: 'Year and month are required' });
     }
 
-    const teacher = await Teacher.findById(req.params.id).select('-password');
+    const teacher = await Teacher.findById(req.params.id).select('name email attendance');
     if (!teacher) {
-      return res.status(404).json({ msg: 'Teacher not found' });
+      return res.status(404).json({ msg: 'User not found' });
     }
 
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0);
+    const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const endDate = new Date(parseInt(year), parseInt(month), 0);
 
-    const records = teacher.attendance.filter(record => {
-      const recordDate = new Date(record.date);
-      return recordDate >= startDate && recordDate <= endDate;
+    const report = teacher.attendance
+      .filter(record => {
+        const recordDate = new Date(record.date);
+        return recordDate >= startDate && recordDate <= endDate;
+      })
+      .map(record => ({
+        date: record.date,
+        checkIn: record.checkIn,
+        checkOut: record.checkOut,
+        status: record.checkIn ? (record.checkOut ? 'Present' : 'Incomplete') : 'Absent'
+      }));
+
+    res.json({
+      teacher: { name: teacher.name, email: teacher.email },
+      year,
+      month,
+      report
     });
-
-    const report = records.map(record => ({
-      date: record.date,
-      checkIn: record.checkIn ? record.checkIn : null,
-      checkOut: record.checkOut ? record.checkOut : null,
-      status: record.checkIn && record.checkOut ? 'Present' : record.checkIn ? 'Incomplete' : 'Absent'
-    }));
-
-    res.json({ teacher, year, month, report });
   } catch (error) {
     console.error('Teacher report error:', error.message);
-    res.status(500).json({ msg: 'Server error' });
+    res.status(500).json({ msg: 'Server error', error: error.message });
   }
 });
 
-// Get Best Performance Report (Admin)
+// Get Best Performance Report
 router.get('/best-performance', authMiddleware, async (req, res) => {
   try {
-    const admin = await Teacher.findById(req.teacher.id);
-    if (admin.role !== 'admin') {
-      return res.status(403).json({ msg: 'Access denied' });
-    }
-
     const { year, month } = req.query;
     if (!year || !month) {
       return res.status(400).json({ msg: 'Year and month are required' });
     }
 
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0);
+    const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const endDate = new Date(parseInt(year), parseInt(month), 0);
 
     const teachers = await Teacher.find({ role: 'teacher' }).select('name email attendance');
     const performance = teachers.map(teacher => {
-      const records = teacher.attendance.filter(record => {
+      const presentDays = teacher.attendance.filter(record => {
         const recordDate = new Date(record.date);
-        return recordDate >= startDate && recordDate <= endDate;
-      });
-
-      const presentDays = records.filter(record => record.checkIn && record.checkOut).length;
+        return recordDate >= startDate && recordDate <= endDate && record.checkIn && record.checkOut;
+      }).length;
       return { name: teacher.name, email: teacher.email, presentDays };
-    });
+    }).sort((a, b) => b.presentDays - a.presentDays);
 
-    const sortedPerformance = performance.sort((a, b) => b.presentDays - a.presentDays);
-    res.json({ year, month, performance: sortedPerformance });
+    res.json({ year, month, performance });
   } catch (error) {
-    console.error('Best performance report error:', error.message);
-    res.status(500).json({ msg: 'Server error' });
+    console.error('Best performance error:', error.message);
+    res.status(500).json({ msg: 'Server error', error: error.message });
   }
 });
 
-// Get Overall School Report (Admin)
+// Get School Attendance Report
 router.get('/school', authMiddleware, async (req, res) => {
   try {
-    const admin = await Teacher.findById(req.teacher.id);
-    if (admin.role !== 'admin') {
-      return res.status(403).json({ msg: 'Access denied' });
-    }
-
     const { year, month, schoolName } = req.query;
     if (!year || !month || !schoolName) {
-      return res.status(400).json({ msg: 'Year, month, and schoolName are required' });
+      return res.status(400).json({ msg: 'Year, month, and school name are required' });
     }
 
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0);
+    const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const endDate = new Date(parseInt(year), parseInt(month), 0);
 
     const teachers = await Teacher.find({ schoolName, role: 'teacher' }).select('name email attendance');
     const report = teachers.map(teacher => {
-      const records = teacher.attendance.filter(record => {
+      const attendanceRecords = teacher.attendance.filter(record => {
         const recordDate = new Date(record.date);
         return recordDate >= startDate && recordDate <= endDate;
       });
-
-      const presentDays = records.filter(record => record.checkIn && record.checkOut).length;
-      return { name: teacher.name, email: teacher.email, presentDays, totalRecords: records.length };
+      const presentDays = attendanceRecords.filter(record => record.checkIn && record.checkOut).length;
+      return {
+        name: teacher.name,
+        email: teacher.email,
+        presentDays,
+        totalRecords: attendanceRecords.length
+      };
     });
 
     res.json({ schoolName, year, month, report });
   } catch (error) {
     console.error('School report error:', error.message);
-    res.status(500).json({ msg: 'Server error' });
+    res.status(500).json({ msg: 'Server error', error: error.message });
   }
 });
 
