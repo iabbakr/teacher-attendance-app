@@ -23,7 +23,7 @@ function TeacherLogin() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+      const apiUrl = process.env.REACT_APP_API_URL;
       console.log('Attempting login to:', `${apiUrl}/api/auth/login`);
       const res = await axios.post(`${apiUrl}/api/auth/login`, { email, password });
       localStorage.setItem('token', res.data.token);
