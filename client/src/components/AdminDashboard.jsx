@@ -12,9 +12,12 @@ function AdminDashboard() {
   const [schoolReport, setSchoolReport] = useState(null);
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [day, setDay] = useState('');
   const [schoolName, setSchoolName] = useState('');
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
   const [selectedAdminId, setSelectedAdminId] = useState('');
+  const [teacherSearch, setTeacherSearch] = useState('');
+  const [adminSearch, setAdminSearch] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -36,7 +39,6 @@ function AdminDashboard() {
         const teachersRes = await axios.get(`${apiUrl}/api/auth/teachers`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        // Split into teachers and admins
         setTeachers(teachersRes.data.filter(t => t.role === 'teacher'));
         setAdmins(teachersRes.data.filter(t => t.role === 'admin'));
       } catch (error) {
@@ -52,6 +54,16 @@ function AdminDashboard() {
     fetchData();
   }, [navigate]);
 
+  const filteredTeachers = teachers.filter(t =>
+    t.name.toLowerCase().includes(teacherSearch.toLowerCase()) ||
+    t.email.toLowerCase().includes(teacherSearch.toLowerCase())
+  );
+
+  const filteredAdmins = admins.filter(a =>
+    a.name.toLowerCase().includes(adminSearch.toLowerCase()) ||
+    a.email.toLowerCase().includes(adminSearch.toLowerCase())
+  );
+
   const fetchTeacherReport = async (userId, isAdmin = false) => {
     if (!userId) {
       setError(`Please select a ${isAdmin ? 'admin' : 'teacher'}`);
@@ -60,9 +72,11 @@ function AdminDashboard() {
     try {
       const token = localStorage.getItem('token');
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+      const params = { year, month };
+      if (day) params.day = day;
       const res = await axios.get(`${apiUrl}/api/report/teacher/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
-        params: { year, month }
+        params
       });
       setTeacherReport(res.data);
       setError('');
@@ -76,9 +90,11 @@ function AdminDashboard() {
     try {
       const token = localStorage.getItem('token');
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+      const params = { year, month };
+      if (day) params.day = day;
       const res = await axios.get(`${apiUrl}/api/report/best-performance`, {
         headers: { Authorization: `Bearer ${token}` },
-        params: { year, month }
+        params
       });
       setBestPerformance(res.data);
       setError('');
@@ -96,9 +112,11 @@ function AdminDashboard() {
     try {
       const token = localStorage.getItem('token');
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+      const params = { year, month, schoolName };
+      if (day) params.day = day;
       const res = await axios.get(`${apiUrl}/api/report/school`, {
         headers: { Authorization: `Bearer ${token}` },
-        params: { year, month, schoolName }
+        params
       });
       setSchoolReport(res.data);
       setError('');
@@ -106,6 +124,133 @@ function AdminDashboard() {
       console.error('School report error:', error.response?.data, error.message);
       setError(error.response?.data?.msg || 'Failed to load report');
     }
+  };
+
+  const handlePrint = (reportType) => {
+    const printWindow = window.open('', '_blank');
+    let content = '';
+    if (reportType === 'teacher' && teacherReport) {
+      content = `
+        <html>
+          <head>
+            <title>${teacherReport.teacher.name} Attendance Report</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              table { width: 100%; border-collapse: collapse; }
+              th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+              th { background-color: #f2f2f2; }
+              @media print { .no-print { display: none; } }
+            </style>
+          </head>
+          <body>
+            <h2>${teacherReport.teacher.name} - Attendance Report</h2>
+            <p>${day ? `Day: ${day}/` : ''}${month}/${year}</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Check-In</th>
+                  <th>Check-Out</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${teacherReport.report.map(record => `
+                  <tr>
+                    <td>${new Date(record.date).toLocaleDateString()}</td>
+                    <td>${record.checkIn ? new Date(record.checkIn).toLocaleTimeString() : 'N/A'}</td>
+                    <td>${record.checkOut ? new Date(record.checkOut).toLocaleTimeString() : 'N/A'}</td>
+                    <td>${record.status}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `;
+    } else if (reportType === 'bestPerformance' && bestPerformance) {
+      content = `
+        <html>
+          <head>
+            <title>Best Performance Report</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              table { width: 100%; border-collapse: collapse; }
+              th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+              th { background-color: #f2f2f2; }
+              @media print { .no-print { display: none; } }
+            </style>
+          </head>
+          <body>
+            <h2>Best Performance Report</h2>
+            <p>${day ? `Day: ${day}/` : ''}${month}/${year}</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Present Days</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${bestPerformance.performance.map(record => `
+                  <tr>
+                    <td>${record.name}</td>
+                    <td>${record.email}</td>
+                    <td>${record.presentDays}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `;
+    } else if (reportType === 'school' && schoolReport) {
+      content = `
+        <html>
+          <head>
+            <title>${schoolReport.schoolName} Attendance Report</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              table { width: 100%; border-collapse: collapse; }
+              th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+              th { background-color: #f2f2f2; }
+              @media print { .no-print { display: none; } }
+            </style>
+          </head>
+          <body>
+            <h2>${schoolReport.schoolName} - Attendance Report</h2>
+            <p>${day ? `Day: ${day}/` : ''}${month}/${year}</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Present Days</th>
+                  <th>Total Records</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${schoolReport.report.map(record => `
+                  <tr>
+                    <td>${record.name}</td>
+                    <td>${record.email}</td>
+                    <td>${record.presentDays}</td>
+                    <td>${record.totalRecords}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `;
+    } else {
+      alert('No report available to print');
+      return;
+    }
+    printWindow.document.write(content);
+    printWindow.document.close();
+    printWindow.print();
   };
 
   const handleLogout = () => {
@@ -164,27 +309,43 @@ function AdminDashboard() {
           )}
           <h3 className="text-xl font-semibold mb-4">Reports</h3>
           <div className="mb-6">
-            <h4 className="text-lg font-semibold mb-2">Teacher Attendance Report</h4>
+            <h4 className="text-lg font-semibold mb-2">Teacher/Admin Attendance Report</h4>
             <div className="flex flex-col gap-4 mb-4">
               <div className="flex gap-4">
+                <input
+                  type="text"
+                  value={teacherSearch}
+                  onChange={(e) => setTeacherSearch(e.target.value)}
+                  placeholder="Search Teachers (Name or Email)"
+                  className="p-2 border rounded flex-1"
+                />
                 <select
                   value={selectedTeacherId}
                   onChange={(e) => setSelectedTeacherId(e.target.value)}
                   className="p-2 border rounded flex-1"
                 >
                   <option value="">Select Teacher</option>
-                  {teachers.map(teacher => (
-                    <option key={teacher._id} value={teacher._id}>{teacher.name}</option>
+                  {filteredTeachers.map(teacher => (
+                    <option key={teacher._id} value={teacher._id}>{teacher.name} ({teacher.email})</option>
                   ))}
                 </select>
+              </div>
+              <div className="flex gap-4">
+                <input
+                  type="text"
+                  value={adminSearch}
+                  onChange={(e) => setAdminSearch(e.target.value)}
+                  placeholder="Search Admins (Name or Email)"
+                  className="p-2 border rounded flex-1"
+                />
                 <select
                   value={selectedAdminId}
                   onChange={(e) => setSelectedAdminId(e.target.value)}
                   className="p-2 border rounded flex-1"
                 >
                   <option value="">Select Admin</option>
-                  {admins.map(admin => (
-                    <option key={admin._id} value={admin._id}>{admin.name}</option>
+                  {filteredAdmins.map(admin => (
+                    <option key={admin._id} value={admin._id}>{admin.name} ({admin.email})</option>
                   ))}
                 </select>
               </div>
@@ -194,30 +355,48 @@ function AdminDashboard() {
                   value={year}
                   onChange={(e) => setYear(e.target.value)}
                   placeholder="Year"
-                  className="p-2 border rounded"
+                  className="p-2 border rounded flex-1"
                   min="2020"
                   max="2100"
                 />
                 <select
                   value={month}
                   onChange={(e) => setMonth(e.target.value)}
-                  className="p-2 border rounded"
+                  className="p-2 border rounded flex-1"
                 >
+                  <option value="">Select Month</option>
                   {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
                     <option key={m} value={m}>{m}</option>
                   ))}
                 </select>
+                <input
+                  type="number"
+                  value={day}
+                  onChange={(e) => setDay(e.target.value)}
+                  placeholder="Day (optional)"
+                  className="p-2 border rounded flex-1"
+                  min="1"
+                  max="31"
+                />
                 <button
                   onClick={() => fetchTeacherReport(selectedTeacherId || selectedAdminId, !!selectedAdminId)}
                   className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                 >
                   Generate Report
                 </button>
+                {teacherReport && (
+                  <button
+                    onClick={() => handlePrint('teacher')}
+                    className="p-2 bg-green-500 text-white rounded hover:bg-green-600"
+                  >
+                    Print Report
+                  </button>
+                )}
               </div>
             </div>
             {teacherReport && (
               <div className="mb-4">
-                <h4 className="text-lg font-semibold">{teacherReport.teacher.name} - {teacherReport.month}/{teacherReport.year}</h4>
+                <h4 className="text-lg font-semibold">{teacherReport.teacher.name} - {day ? `${day}/` : ''}{month}/{year}</h4>
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="bg-gray-200">
@@ -249,29 +428,47 @@ function AdminDashboard() {
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
                 placeholder="Year"
-                className="p-2 border rounded"
+                className="p-2 border rounded flex-1"
                 min="2020"
                 max="2100"
               />
               <select
                 value={month}
                 onChange={(e) => setMonth(e.target.value)}
-                className="p-2 border rounded"
+                className="p-2 border rounded flex-1"
               >
+                <option value="">Select Month</option>
                 {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
                   <option key={m} value={m}>{m}</option>
                 ))}
               </select>
+              <input
+                type="number"
+                value={day}
+                onChange={(e) => setDay(e.target.value)}
+                placeholder="Day (optional)"
+                className="p-2 border rounded flex-1"
+                min="1"
+                max="31"
+              />
               <button
                 onClick={fetchBestPerformance}
                 className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
               >
                 Generate Report
               </button>
+              {bestPerformance && (
+                <button
+                  onClick={() => handlePrint('bestPerformance')}
+                  className="p-2 bg-green-500 text-white rounded hover:bg-green-600"
+                >
+                  Print Report
+                </button>
+              )}
             </div>
             {bestPerformance && (
               <div className="mb-4">
-                <h4 className="text-lg font-semibold">Best Performance - {bestPerformance.month}/{bestPerformance.year}</h4>
+                <h4 className="text-lg font-semibold">Best Performance - {day ? `${day}/` : ''}{bestPerformance.month}/{bestPerformance.year}</h4>
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="bg-gray-200">
@@ -308,29 +505,47 @@ function AdminDashboard() {
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
                 placeholder="Year"
-                className="p-2 border rounded"
+                className="p-2 border rounded flex-1"
                 min="2020"
                 max="2100"
               />
               <select
                 value={month}
                 onChange={(e) => setMonth(e.target.value)}
-                className="p-2 border rounded"
+                className="p-2 border rounded flex-1"
               >
+                <option value="">Select Month</option>
                 {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
                   <option key={m} value={m}>{m}</option>
                 ))}
               </select>
+              <input
+                type="number"
+                value={day}
+                onChange={(e) => setDay(e.target.value)}
+                placeholder="Day (optional)"
+                className="p-2 border rounded flex-1"
+                min="1"
+                max="31"
+              />
               <button
                 onClick={fetchSchoolReport}
                 className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
               >
                 Generate Report
               </button>
+              {schoolReport && (
+                <button
+                  onClick={() => handlePrint('school')}
+                  className="p-2 bg-green-500 text-white rounded hover:bg-green-600"
+                >
+                  Print Report
+                </button>
+              )}
             </div>
             {schoolReport && (
               <div className="mb-4">
-                <h4 className="text-lg font-semibold">{schoolReport.schoolName} - {schoolReport.month}/{schoolReport.year}</h4>
+                <h4 className="text-lg font-semibold">{schoolReport.schoolName} - {day ? `${day}/` : ''}{schoolReport.month}/{schoolReport.year}</h4>
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="bg-gray-200">
