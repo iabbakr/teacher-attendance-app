@@ -116,7 +116,7 @@ function TeacherLogin() {
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="bg-white p-8 rounded shadow-md w-96">
-        <h2 className="text-2xl font-bold mb-4">Teacher Login</h2>
+        <h2 className="text-2xl font-bold mb-4">Login</h2>
         <form onSubmit={handleLogin}>
           <input
             type="email"
