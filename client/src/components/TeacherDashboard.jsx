@@ -90,8 +90,8 @@ function TeacherDashboard() {
       </nav>
       <div className="flex items-center justify-center py-8">
         <div className="bg-white p-8 rounded shadow-md w-96">
-          <h2 className="text-2xl font-bold mb-4">Teacher Dashboard</h2>
-          <p>Welcome, {teacher.name}!</p>
+          <h2 className="text-2xl font-bold mb-4">Welcome, {teacher.name}!</h2>
+          <p>Kindly check in or out for your attendance</p>
           <button
             onClick={handleCheckIn}
             disabled={!isCheckInEnabled}
