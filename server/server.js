@@ -11,7 +11,7 @@ const app = express();
 
 // Enable CORS for the frontend origin
 app.use(cors({
-  origin: ['http://localhost:3000','https://teacher-attendance-app-vxs9.vercel.app/'],
+  origin: ['https://teacher-attendance-app-vxs9.vercel.app/','http://localhost:3000'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
