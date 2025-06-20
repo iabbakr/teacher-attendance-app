@@ -92,6 +92,22 @@ function AdminDashboard() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+      <nav className="bg-blue-600 p-4 text-white flex justify-between">
+        <div>
+          <button
+            onClick={() => navigate(teacher.role === 'admin' ? '/admin-dashboard' : '/teacher-dashboard')}
+            className="mr-4 hover:underline"
+          >
+            Dashboard
+          </button>
+          <button onClick={() => navigate('/profile')} className="hover:underline">
+            Profile
+          </button>
+        </div>
+        <button onClick={handleLogout} className="hover:underline">
+          Logout
+        </button>
+      </nav>
       <h2 className="text-2xl font-bold mb-4">Admin Dashboard</h2>
       <div className="bg-white p-8 rounded shadow-md w-full max-w-4xl">
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
